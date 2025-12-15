@@ -20,6 +20,7 @@ const users = new Map([
     "admin",
     {
       password: "12345",
+      username: "Adithiyan R",
       role: "Admin",
       createdAt: new Date().toISOString(),
     },
@@ -28,7 +29,17 @@ const users = new Map([
     "user",
     {
       password: "password",
+      username: "Karthikeyan K",
       role: "Employee",
+      createdAt: new Date().toISOString(),
+    },
+  ],
+  [
+    "facilitator",
+    {
+      password: "password",
+      username: "Kishore K",
+      role: "Facilitator",
       createdAt: new Date().toISOString(),
     },
   ],
@@ -70,7 +81,11 @@ app.post("/login", (req, res) => {
   if (!user || user.password !== password)
     return res.status(401).json({ error: "Invalid credentials" });
 
-  const token = signToken({ username, role: user.role });
+  const token = signToken({
+    id: username,
+    name: user.username,
+    role: user.role,
+  });
 
   return res.json({ token, expiresIn: JWT_EXPIRES_IN });
 });
