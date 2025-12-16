@@ -45,6 +45,158 @@ const users = new Map([
   ],
 ]);
 
+// =========================
+// BATCH MANAGEMENT STORE
+// =========================
+let batches = [
+  {
+    code: "IGNITE-2025-A",
+    name: "Full Stack January 2025",
+    domain: "Not Specified",
+    startDate: "2025-01-15",
+    endDate: "2025-05-15",
+    trainees: 30,
+    status: "Upcoming",
+  },
+];
+
+// USER MANAGEMENT STORE
+let employeeUsers = [
+  {
+    id: "EMP001",
+    name: "Karthikeyan K",
+    email: "karthikeyan@tcs.com",
+    role: "Developer",
+    team: "Development",
+    status: "Active",
+  },
+  {
+    id: "EMP002",
+    name: "Adithiyan R",
+    email: "adithiyan@tcs.com",
+    role: "Manager",
+    team: "Architecture",
+    status: "Active",
+  },
+];
+
+// GET ALL USERS
+app.get("/users", verifyToken, (req, res) => {
+  res.json(employeeUsers);
+});
+
+// GET ALL BATCHES
+app.get("/batches", verifyToken, (req, res) => {
+  res.json(batches);
+});
+
+// CREATE BATCH
+app.post("/batches", verifyToken, (req, res) => {
+  const batch = req.body;
+
+  if (!batch.name || !batch.startDate || !batch.endDate) {
+    return res.status(400).json({ error: "Missing required fields" });
+  }
+
+  const exists = batches.find((b) => b.code === batch.code);
+  if (exists) {
+    return res.status(409).json({ error: "Batch already exists" });
+  }
+
+  batches.push(batch);
+  res.status(201).json(batch);
+});
+
+// UPDATE BATCH
+app.put("/batches/:code", verifyToken, (req, res) => {
+  const { code } = req.params;
+
+  const index = batches.findIndex((b) => b.code === code);
+  if (index === -1) {
+    return res.status(404).json({ error: "Batch not found" });
+  }
+
+  batches[index] = {
+    ...batches[index],
+    ...req.body,
+  };
+
+  res.json(batches[index]);
+});
+
+// CREATE SINGLE USER
+app.post("/users", verifyToken, (req, res) => {
+  const { id, name, email, role, status } = req.body;
+
+  if (!id || !name || !email) {
+    return res.status(400).json({ error: "Missing required fields" });
+  }
+
+  const exists = employeeUsers.find((u) => u.id === id);
+  if (exists) {
+    return res.status(409).json({ error: "User already exists" });
+  }
+
+  const newUser = {
+    id,
+    name,
+    email,
+    role,
+    team: "Development", // default
+    status,
+  };
+
+  employeeUsers.push(newUser);
+
+  res.status(201).json(newUser);
+});
+
+// UPDATE USER
+app.put("/users/:id", verifyToken, (req, res) => {
+  const { id } = req.params;
+  const { name, email, role, status } = req.body;
+
+  const index = employeeUsers.findIndex((u) => u.id === id);
+
+  if (index === -1) {
+    return res.status(404).json({ error: "User not found" });
+  }
+
+  employeeUsers[index] = {
+    ...employeeUsers[index],
+    name,
+    email,
+    role,
+    status,
+  };
+
+  res.json(employeeUsers[index]);
+});
+
+// BULK USER UPLOAD
+app.post("/users/bulk", verifyToken, (req, res) => {
+  const users = req.body; // expect array
+
+  if (!Array.isArray(users)) {
+    return res.status(400).json({ error: "Invalid payload" });
+  }
+
+  users.forEach((u) => {
+    if (!employeeUsers.find((e) => e.id === u.id)) {
+      employeeUsers.push({
+        id: u.id,
+        name: u.name,
+        email: u.email,
+        role: u.role || "Developer",
+        team: u.team || "Development",
+        status: u.status || "Active",
+      });
+    }
+  });
+
+  res.json({ message: "Bulk users uploaded", count: users.length });
+});
+
 const PORT = process.env.PORT || 4000;
 const JWT_SECRET = process.env.JWT_SECRET || "dev_secret_key";
 const JWT_EXPIRES_IN = "2h";
